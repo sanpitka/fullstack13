@@ -1,5 +1,4 @@
 require('dotenv').config()
-process.stdout.setDefaultEncoding('utf8')
 const { Sequelize, QueryTypes } = require('sequelize')
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
