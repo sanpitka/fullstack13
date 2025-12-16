@@ -1,5 +1,11 @@
 const router = require('express').Router()
 
+const {
+  asyncHandler,
+  BadRequestError,
+  NotFoundError,
+} = require('../util/middleware')
+
 const { Blog } = require('../models')
 
 const blogFinder = async (req, res, next) => {
@@ -12,14 +18,18 @@ router.get('/', async (req, res) => {
   res.json(blogs)
 })
 
-router.post('/', async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
+  const { title, url } = req.body
+  if (!title || !url) {
+    throw new BadRequestError('title or url missing')
+  }
   try {
     const blog = await Blog.create(req.body)
-    res.json(blog)
+    res.status(201).json(blog)
   } catch(error) {
     return res.status(400).json({ error })
   }
-})
+}))
 
 router.get('/:id', blogFinder, async (req, res) => {
   if (req.blog) {
@@ -36,14 +46,14 @@ router.delete('/:id', blogFinder, async (req, res) => {
   res.status(204).end()
 })
 
-router.put('/:id', blogFinder, async (req, res) => {
-  if (req.blog) {
+router.put('/:id', blogFinder, asyncHandler(async (req, res) => {
+    if (!req.blog) {
+      throw new NotFoundError('blog not found')
+    }
     req.blog.likes = req.body.likes
     await req.blog.save()
     res.json(req.blog)
-  } else {
-    res.status(404).end()
-  }
-})
+  })
+)
 
 module.exports = router
