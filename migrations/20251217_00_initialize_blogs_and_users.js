@@ -68,7 +68,7 @@ module.exports = {
       }
     })
 
-    await queryInterface.createTable('readingLists', {
+    await queryInterface.createTable('reading_lists', {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -121,7 +121,7 @@ module.exports = {
   },
 
   down: async ({ context: queryInterface }) => {
-    await queryInterface.dropTable('readingLists')
+    await queryInterface.dropTable('reading_lists')
     await queryInterface.dropTable('blogs')
     await queryInterface.dropTable('users')
   },

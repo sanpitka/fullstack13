@@ -1,27 +1,35 @@
 const router = require('express').Router()
-
 const {
   asyncHandler,
   BadRequestError,
   NotFoundError,
 } = require('../util/middleware')
+const { User, Blog } = require('../models')
 
-const { User } = require('../models')
-const { Blog } = require('../models')
+const userFinder = asyncHandler(async (req, res, next) => {
+  const where = {}
+  if (req.query.read === 'true') where.read = true
+  if (req.query.read === 'false') where.read = false
 
-const userFinder = async (req, res, next) => {
-  req.user = await User.findByPk(req.params.id)
-  next()
-}
-
-router.get('/', asyncHandler(async (req, res) => {
-  const users = await User.findAll({
+  req.user = await User.findByPk(req.params.id, {
+    attributes: ['name', 'username'],
     include: {
       model: Blog,
-      attributes: { exclude: ['userId'] }
+      as: 'readings',
+      attributes: ['id', 'url', 'title', 'author', 'likes', 'year'],
+      through: {
+        attributes: ['id', 'read'],
+        ...(req.query.read ? { where } : {})
+      }
     }
   })
-  res.json(users)
+
+  next()
+})
+
+router.get('/:id', userFinder, asyncHandler((req, res) => {
+  if (!req.user) throw new NotFoundError('user not found')
+  res.json(req.user)
 }))
 
 router.post('/', asyncHandler(async (req, res) => {
@@ -29,20 +37,9 @@ router.post('/', asyncHandler(async (req, res) => {
   if (!name || !username) {
     throw new BadRequestError('name or username missing')
   }
-  try {
-    const user = await User.create(req.body)
-    res.status(201).json(user)
-  } catch(error) {
-    return res.status(400).json({ error })
-  }
-}))
 
-router.get('/:id', userFinder, asyncHandler(async (req, res) => {
-  if (req.user) {
-    res.json(req.user)
-  } else {
-    res.status(404).end()
-  }
+  const user = await User.create(req.body)
+  res.status(201).json(user)
 }))
 
 router.put('/:username', asyncHandler(async (req, res) => {
@@ -61,5 +58,6 @@ router.put('/:username', asyncHandler(async (req, res) => {
   await user.save()
   res.json(user)
 }))
+
 
 module.exports = router

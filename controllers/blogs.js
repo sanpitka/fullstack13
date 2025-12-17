@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
     ]
   }
   const blogs = await Blog.findAll({
-    attributes: { exclude: ['userId'] },
+    attributes: { exclude: ['user_id'] },
     include: {
       model: User,
       attributes: ['username']
@@ -67,7 +67,7 @@ router.get('/:id', blogFinder, async (req, res) => {
 
 router.delete('/:id', blogFinder, tokenExtractor, asyncHandler(async (req, res) => {
   if (req.blog) {
-    if (req.blog.userId === req.decodedToken.id) {
+    if (req.blog.user_id === req.decodedToken.id) {
       await req.blog.destroy()
       return res.status(204).end()
     } else {
