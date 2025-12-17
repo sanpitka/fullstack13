@@ -38,18 +38,24 @@ router.get('/', async (req, res) => {
 })
 
 router.post('/', tokenExtractor, asyncHandler(async (req, res) => {
-  const { title, url } = req.body
-  if (!title || !url) {
-    throw new BadRequestError('title or url missing')
-  }
-  try {
-    const user = await User.findByPk(req.token.id)
-    const blog = await Blog.create({ ...req.body, userId: user.id })
-    res.json(blog)
-  } catch(error) {
-    return res.status(400).json({ error })
-  }
-}))
+    const { title, url } = req.body
+    if (!title || !url) {
+      throw new BadRequestError('title or url missing')
+    }
+
+    const user = await User.findByPk(req.decodedToken.id)
+    if (!user) {
+      throw new BadRequestError('user not found for token')
+    }
+
+    const blog = await Blog.create({
+      ...req.body,
+      userId: user.id,
+    })
+
+    res.status(201).json(blog)
+  })
+)
 
 router.get('/:id', blogFinder, async (req, res) => {
   if (req.blog) {
@@ -61,11 +67,11 @@ router.get('/:id', blogFinder, async (req, res) => {
 
 router.delete('/:id', blogFinder, tokenExtractor, asyncHandler(async (req, res) => {
   if (req.blog) {
-    if (req.blog.userId === req.token.id) {
+    if (req.blog.userId === req.decodedToken.id) {
       await req.blog.destroy()
       return res.status(204).end()
     } else {
-      return res.status(401).json({ error: 'unauthorized' })
+      return res.status(401).json({ error: ['unauthorized'] })
     }
   }
   res.status(204).end()

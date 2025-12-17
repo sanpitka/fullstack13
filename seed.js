@@ -19,6 +19,7 @@ const seed = async () => {
       author: 'Tove Jansson',
       url: 'http://hattivatti.blogspot.com',
       likes: 12345,
+      year: 1995,
       userId: u1.id
     }
   })
@@ -29,6 +30,7 @@ const seed = async () => {
       author: 'Julia Capulet',
       url: 'http://oiromeo.lily.fi',
       likes: 4152,
+      year: 2001,
       userId: u2.id
     }
   })

@@ -37,6 +37,9 @@ const unknownEndpoint = (req, res) => {
 }
 
 const errorHandler = (error, req, res, next) => {
+
+  console.error('ORIGINAL:', error.original?.message)
+  console.error('ERRORS:', error.errors?.map(e => e.message))
   console.error(error.name, error.message)
 
   if (error.name === 'BadRequestError') {
@@ -51,15 +54,18 @@ const errorHandler = (error, req, res, next) => {
     error.name === 'SequelizeValidationError' ||
     error.name === 'SequelizeUniqueConstraintError'
   ) {
-    return res.status(400).json({ error: error.errors.map(e => e.message) })
+    return res.status(400).json({
+      error: error.errors.map(e => e.message),
+    })
   }
 
   if (error.name === 'SequelizeDatabaseError') {
     return res.status(400).json({ error: [error.message] })
   }
 
-  return res.status(500).json({ error: ['internal server error'] })
+  return res.status(500).json({ error: [error.message || 'internal server error'] })
 }
+
 
 module.exports = {
   asyncHandler,
