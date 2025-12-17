@@ -1,5 +1,3 @@
-// GET /api/authors: palauttaa author-kohtaiset blogien ja tykkäysten summat
-const { fn, col } = require('sequelize')
 const router = require('express').Router()
 const { User } = require('../models')
 
@@ -37,19 +35,6 @@ router.get('/', async (req, res) => {
     order: [['likes', 'DESC']]
   })
   res.json(blogs)
-})
-
-router.get('/authors', async (req, res) => {
-  const authors = await Blog.findAll({
-    attributes: [
-      'author',
-      [fn('COUNT', col('id')), 'blogs'],
-      [fn('SUM', col('likes')), 'likes']
-    ],
-    group: ['author'],
-    order: [[fn('SUM', col('likes')), 'DESC']]
-  })
-  res.json(authors)
 })
 
 router.post('/', tokenExtractor, asyncHandler(async (req, res) => {
