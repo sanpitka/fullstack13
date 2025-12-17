@@ -16,28 +16,32 @@ class NotFoundError extends Error {
 }
 
 const unknownEndpoint = (req, res) => {
-  res.status(404).json({ error: 'unknown endpoint' })
+  res.status(404).json({ error: ['unknown endpoint'] })
 }
 
 const errorHandler = (error, req, res, next) => {
   console.error(error.name, error.message)
 
   if (error.name === 'BadRequestError') {
-    return res.status(400).json({ error: error.message })
+    return res.status(400).json({ error: [error.message] })
   }
 
   if (error.name === 'NotFoundError') {
-    return res.status(404).json({ error: error.message })
+    return res.status(404).json({ error: [error.message] })
   }
 
   if (
     error.name === 'SequelizeValidationError' ||
-    error.name === 'SequelizeDatabaseError'
+    error.name === 'SequelizeUniqueConstraintError'
   ) {
-    return res.status(400).json({ error: 'database error' })
+    return res.status(400).json({ error: error.errors.map(e => e.message) })
   }
 
-  return res.status(500).json({ error: 'internal server error' })
+  if (error.name === 'SequelizeDatabaseError') {
+    return res.status(400).json({ error: [error.message] })
+  }
+
+  return res.status(500).json({ error: ['internal server error'] })
 }
 
 module.exports = {
