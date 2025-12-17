@@ -1,9 +1,11 @@
 const router = require('express').Router()
+const { User } = require('../models')
 
 const {
   asyncHandler,
   BadRequestError,
   NotFoundError,
+  tokenExtractor,
 } = require('../util/middleware')
 
 const { Blog } = require('../models')
@@ -14,18 +16,25 @@ const blogFinder = async (req, res, next) => {
 }
 
 router.get('/', async (req, res) => {
-  const blogs = await Blog.findAll()
+  const blogs = await Blog.findAll({
+    attributes: { exclude: ['userId'] },
+    include: {
+      model: User,
+      attributes: ['username']
+    }
+  })
   res.json(blogs)
 })
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', tokenExtractor, asyncHandler(async (req, res) => {
   const { title, url } = req.body
   if (!title || !url) {
     throw new BadRequestError('title or url missing')
   }
   try {
-    const blog = await Blog.create(req.body)
-    res.status(201).json(blog)
+    const user = await User.findByPk(req.token.id)
+    const blog = await Blog.create({ ...req.body, userId: user.id })
+    res.json(blog)
   } catch(error) {
     return res.status(400).json({ error })
   }
@@ -39,12 +48,17 @@ router.get('/:id', blogFinder, async (req, res) => {
   }
 })
 
-router.delete('/:id', blogFinder, async (req, res) => {
+router.delete('/:id', blogFinder, tokenExtractor, asyncHandler(async (req, res) => {
   if (req.blog) {
-    await req.blog.destroy()
+    if (req.blog.userId === req.token.id) {
+      await req.blog.destroy()
+      return res.status(204).end()
+    } else {
+      return res.status(401).json({ error: 'unauthorized' })
+    }
   }
   res.status(204).end()
-})
+}))
 
 router.put('/:id', blogFinder, asyncHandler(async (req, res) => {
     if (!req.blog) {
